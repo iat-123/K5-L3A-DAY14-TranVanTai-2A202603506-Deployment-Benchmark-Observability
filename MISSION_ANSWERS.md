@@ -308,9 +308,10 @@ Mất 1 instance thì traffic chuyển sang 2 instance còn lại và session v�
 
 ## Part 6: Final Project — output `check_production_ready.py`
 
-Chạy trong `06-lab-complete/` trên Windows có Docker (`python check_production_ready.py`, bản đầy đủ):
+Chạy đầy đủ (có Docker, không `--skip-docker`) trong `06-lab-complete/`, **WSL2 Ubuntu**, Python 3.11.18 (`os.name = posix`), Docker 29.9.3 qua Docker Desktop WSL Integration:
 
 ```
+$ python check_production_ready.py
   📋 Checklist Deliverable
      ✅ Dockerfile (multi-stage, < 500 MB)
      ✅ docker-compose.yml (agent + redis)
@@ -322,25 +323,29 @@ Chạy trong `06-lab-complete/` trên Windows có Docker (`python check_producti
      ✅ Cost guard
      ✅ Config từ environment variables
      ✅ Structured logging
-     ⚠️  Graceful shutdown
+     ✅ Graceful shutdown
      ✅ Public URL ready (Railway / Render config)
 ----------------------------------------------------------------
-  Result: 11/12 tiêu chí đạt · 42/42 checks passed
-  ⚠️  Chưa kiểm tra được: Graceful shutdown
+  Result: 12/12 tiêu chí đạt · 43/43 checks passed
+  🎉 PASS 12/12 — PRODUCTION READY! Deploy nào!
+================================================================
 ```
 
-Mục ⚠️ duy nhất là check runtime "SIGTERM lúc đang có request". Script tự bỏ qua check này trên Windows ("Windows không gửi được SIGTERM"). Các check khác của tiêu chí 11 đều ✅, gồm `Docker: docker stop tắt êm (exit code 0, < 10s) — exit code 0, 0.9s`. Đã chạy check SIGTERM đó trong môi trường Linux (container `python:3.11-slim`, `os.name = posix`, Redis thật):
-
+Chi tiết từ output:
 ```
-⚠️  11. Graceful shutdown
-     ✅ Code xử lý SIGTERM / lifespan shutdown
-     ✅ Khi chạy: SIGTERM lúc đang có request → request vẫn 200, process tự thoát — exit code 0
-     ⚠️  Docker: `docker stop` tắt êm (exit code 0, < 10s) — chưa chạy (--skip-docker)
+✅ Docker: build image thành công — 42s
+✅ Docker: image < 500 MB — 273 MB
+✅ Docker: container chạy được, GET /health → 200
+✅ Khi chạy: Redis mất kết nối → /ready 503 (còn /health vẫn 200)
+✅ Khi chạy: vượt giới hạn → 429 — 429 sau 5 request thành công (RATE_LIMIT_PER_MINUTE=5)
+✅ Khi chạy: state nằm trong Redis — restart agent vẫn bị 429
+✅ Khi chạy: hết budget → 402 — 402 ở request thứ 1
+✅ Khi chạy: mọi dòng log của app là JSON hợp lệ — 17 dòng JSON
+✅ Khi chạy: SIGTERM lúc đang có request → request vẫn 200, process tự thoát — exit code 0
+✅ Docker: `docker stop` tắt êm (exit code 0, < 10s) — exit code 0, 0.9s
 ```
 
-Gộp hai lần chạy thì mọi check của 12 tiêu chí đều ✅. **TODO:** chạy lại một lần trong WSL2 (Docker Desktop bật WSL Integration cho Ubuntu) để có một output `PASS 12/12` duy nhất rồi thay khối trên.
-
-Một số chi tiết từ output: image 273 MB; 429 sau 5 request (`RATE_LIMIT_PER_MINUTE=5`); restart agent vẫn 429 (state trong Redis); 402 khi budget 0.000001; 17 dòng log JSON hợp lệ.
+Thêm: `python check_production_ready.py --public-url https://agent-production-dd52d810.up.railway.app` cho `✅ Public URL: GET .../health → 200`.
 
 ---
 
