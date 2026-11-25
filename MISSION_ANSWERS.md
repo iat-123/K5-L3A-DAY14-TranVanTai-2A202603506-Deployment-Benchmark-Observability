@@ -120,7 +120,10 @@ $ curl -X POST http://localhost/ask -H "Content-Type: application/json" -d '{"qu
 
 ### Exercise 3.1: Railway deployment (agent Part 6, thư mục `06-lab-complete/`)
 
-- URL: **TODO: điền sau khi deploy** (xem [DEPLOYMENT.md](DEPLOYMENT.md))
+- URL: **https://agent-production-dd52d810.up.railway.app** (chi tiết: [DEPLOYMENT.md](DEPLOYMENT.md))
+- Deploy bằng Railway CLI (`railway up` trong `06-lab-complete/`, build từ `Dockerfile` theo `railway.toml`) + Redis của Railway; `AGENT_API_KEY`, `REDIS_URL=${{Redis.REDIS_URL}}`, `ENVIRONMENT` đặt trong Railway Variables.
+- 4 lệnh tự kiểm CP6: `/health` → **200**, `/ready` → **200**, `/ask` không key → **401**, `/ask` có key → **200**.
+- Xem log: dashboard → service `agent` → Deployments → View logs (hoặc `railway logs --service agent`).
 - Screenshot: [screenshots/dashboard.png](screenshots/dashboard.png), [screenshots/running.png](screenshots/running.png), [screenshots/test.png](screenshots/test.png)
 
 ### Exercise 3.2: So sánh `railway.toml` với `render.yaml`
@@ -352,6 +355,7 @@ Bài làm dùng **Claude Code** (Anthropic) làm trợ lý trong VS Code. Tóm t
 | 3 | Chạy benchmark Part 7 (load test 4 mức concurrency, 3 mức `MOCK_SLOW_RATE`, eval v1/v2) | Script chạy lệnh; phát hiện `run_eval.py` lỗi encoding cp1252 trên Windows nên chạy lại với `PYTHONUTF8=1` | Mọi số trong `BENCHMARK_REPORT.md` lấy từ `reports/*.json` |
 | 4 | Sửa 2 câu sai `security-02`, `scaling-03` | Thêm 2 entry vào `KNOWLEDGE_BASE` (JWT/API key; Kubernetes HPA), không sửa golden dataset | `eval_v2_fixed.json`: 23/23, 0 regression, gate PASS |
 | 5 | Bật observability stack, chạy Locust, làm alert firing, tìm trace | Phát hiện Dockerfile Part 7 thiếu `PYTHONUSERBASE` (agent không import được uvicorn) và lệnh benchmark scale thiếu `--no-deps` (số agent bị đưa về 2) | Đếm `count(up{job="agent"})` trên Prometheus và số container trước/sau mỗi lần chạy; trace_id khớp log JSON; ảnh chụp bằng Edge headless |
+| 7 | Deploy agent Part 6 lên Railway | Các lệnh Railway CLI (init, add Redis, variables, up, domain); key sinh ngẫu nhiên, chỉ lưu trong Railway Variables và file local đã gitignore | Chạy 4 lệnh tự kiểm CP6 (200/200/401/200), `check_production_ready.py --public-url` ✅, xem deploy logs có log JSON |
 | 6 | Chạy các exercise Part 1–5 và viết `MISSION_ANSWERS.md` | Output thật của các lệnh curl, docker, test_stateless; bản nháp câu trả lời | Đọc lại code từng Part để đối chiếu câu trả lời (vd 4.1 sai key trả 403 chứ không phải 401) |
 
 Không dùng AI để bịa số đo: mọi số liệu là output của lệnh đã chạy trên máy này, và file report/CSV/ảnh tương ứng có trong repo.
